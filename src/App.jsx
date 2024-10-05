@@ -10,19 +10,6 @@ function App(){
     const imgRef = useRef()
     const [errMsg,setErrMsg] = useState('')
 
-    useEffect(()=>{
-        if (image){
-            const info = {...imageInfo}
-            setTimeout(()=>{
-                setImageInfo({
-                    ...info,
-                    height:imgRef.current.naturalHeight,
-                    width:imgRef.current.naturalWidth
-                })
-            },10)
-        }
-    },[image])
-
     function sizeSuffix(size){
         return {
             kb:Intl.NumberFormat('en-US',{maximumFractionDigits:2}).format(size / 1000)+' KB',
@@ -32,14 +19,21 @@ function App(){
 
     function getImageInfo(e){
         e.preventDefault()
+
+        if (!url){
+            setErrMsg('Provide a url')
+            return
+        }
+
         setLoading(true)
         setImage(null)
         setImageInfo({})
         setErrMsg('')
         axios.get(url,{responseType:'blob'}).then(res => {
-            if (res.headers["content-type"].startsWith('image')){
+            if (res.headers["content-type"].startsWith('image/')){
                 setImageInfo({
-                    size:sizeSuffix(res.data.size)
+                    size:sizeSuffix(res.data.size),
+                    type:res.headers['content-type']
                 })
                 setImage(URL.createObjectURL(res.data))
             }else{
@@ -54,6 +48,28 @@ function App(){
         })
     }
 
+    async function handlePaste(e){
+        setImage(null)
+        setImageInfo({})
+        setErrMsg('')
+        const clipboardItem = typeof navigator?.clipboard?.read === 'function' ? await navigator.clipboard.read() : e.clipboardData.files
+        let blob;
+        if (clipboardItem.type?.startsWith('image/')) {
+            // For files from `e.clipboardData.files`.
+            blob = clipboardItem
+            // Do something with the blob.
+            setImage(URL.createObjectURL(blob));
+        } else {
+            // For files from `navigator.clipboard.read()`.
+            const imageTypes = clipboardItem[0].types?.filter(type => type.startsWith('image/'))
+            for (const imageType of imageTypes) {
+                blob = await clipboardItem[0].getType(imageType);
+                // Do something with the blob.
+                setImage(URL.createObjectURL(blob))
+            }
+        }
+    }
+
     return (
         <main className="w-full md:w-7/12 mx-auto">
             <h1 className="text-2xl font-bold text-center">Image Information Viewer</h1>
@@ -62,15 +78,15 @@ function App(){
                        className="border-2 border-emerald-600 w-full rounded-xl p-4 text-xl focus-within:outline-emerald-800 focus-visible:outline-emerald-800 focus:border-emerald-800"
                        autoFocus value={url} onChange={(e) => {
                     setUrl(e.target.value)
-                }}/>
+                }} onPaste={handlePaste}/>
                 <button type="submit" className="w-fit text-nowrap bg-emerald-950 text-white rounded-xl p-4">Extract
                     Data
                 </button>
             </form>
-            {(Object.keys(imageInfo).length > 0 && image) ?
+            {(image) ?
                 <div className="mt-4 bg-emerald-50/70 min-h-52 rounded-xl">
                     <div className="flex flex-col md:flex-row gap-4 md:gap-0 border-b py-5">
-                        <div className="flex justify-around w-full">
+                        {imageInfo.size && <div className="flex justify-around w-full">
                             <div className="w-full text-center">
                                 <h4 className="font-bold text-emerald-800 text-lg">Size in MB</h4>
                                 <p>{imageInfo.size.mb}</p>
@@ -80,6 +96,7 @@ function App(){
                                 <p>{imageInfo.size.kb}</p>
                             </div>
                         </div>
+                        }
                         <div className="flex justify-around w-full">
                             <div className="w-full text-center">
                                 <h4 className="font-bold text-emerald-800 text-lg">Width</h4>
@@ -89,10 +106,22 @@ function App(){
                                 <h4 className="font-bold text-emerald-800 text-lg">Height</h4>
                                 {imageInfo.height && <p>{imageInfo.height + 'px'}</p>}
                             </div>
+                            {imageInfo.type && <div className="w-full text-center">
+                                <h4 className="font-bold text-emerald-800 text-lg">Type</h4>
+                                <p>{imageInfo.type}</p>
+                            </div>
+                            }
                         </div>
                     </div>
                     <div className="py-5 flex justify-center">
-                        {image && <img src={image} ref={imgRef}/>}
+                        {image && <img src={image} ref={imgRef} onLoad={(e)=>{
+                            const info = {...imageInfo}
+                            setImageInfo({
+                                ...info,
+                                height:e.target.naturalHeight,
+                                width:e.target.naturalWidth
+                            })
+                        }}/>}
                     </div>
                 </div>
                 :
