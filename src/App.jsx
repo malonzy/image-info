@@ -19,7 +19,7 @@ function App(){
                     height:imgRef.current.naturalHeight,
                     width:imgRef.current.naturalWidth
                 })
-            },100)
+            },10)
         }
     },[image])
 
@@ -47,7 +47,7 @@ function App(){
             }
         }).catch(err => {
             console.log(err)
-            setErrMsg('URL provided does not link to an image')
+            setErrMsg('Could not information from link provided')
         })
             .finally(()=>{
             setLoading(false)
@@ -83,15 +83,15 @@ function App(){
                         <div className="flex justify-around w-full">
                             <div className="w-full text-center">
                                 <h4 className="font-bold text-emerald-800 text-lg">Width</h4>
-                                <p>{imageInfo.width + 'px'}</p>
+                                {imageInfo.width && <p>{imageInfo.width + 'px'}</p>}
                             </div>
                             <div className="w-full text-center">
                                 <h4 className="font-bold text-emerald-800 text-lg">Height</h4>
-                                <p>{imageInfo.height + 'px'}</p>
+                                {imageInfo.height && <p>{imageInfo.height + 'px'}</p>}
                             </div>
                         </div>
                     </div>
-                    <div className="mt-5">
+                    <div className="py-5 flex justify-center">
                         {image && <img src={image} ref={imgRef}/>}
                     </div>
                 </div>
