@@ -1,29 +1,30 @@
-name: Vite React CI
+name: deployment
 
 on:
   push:
     branches: [runner]
-  pull_request:
-    branches: [runner]
 
 jobs:
   build:
+    name: Build App
     runs-on: self-hosted
-    
-    steps:
+
+    steps:        
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          clean: true
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 18
 
       - name: Install dependencies
         run: npm install
 
-      - name: Run build
+      - name: Build app
         run: npm run build
 
-      - name: Serve app
+      - name: Run app
         run: npx serve dist
