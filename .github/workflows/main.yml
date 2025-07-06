@@ -25,6 +25,3 @@ jobs:
 
       - name: Build app
         run: npm run build
-
-      - name: Run app
-        run: npx serve dist
