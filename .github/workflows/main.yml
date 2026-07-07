@@ -1,27 +1,31 @@
-name: deployment
+name: Deploy Vite App
 
 on:
   push:
-    branches: [runner]
+    branches:
+      - runner
 
 jobs:
-  build:
-    name: Build App
+  deploy:
     runs-on: self-hosted
 
-    steps:        
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          clean: true
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 22
+          cache: npm
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Build app
+      - name: Build application
         run: npm run build
+
+      - name: Restart PM2 application
+        run: |
+          pm2 restart vite-app || pm2 start "npm run preview -- --host 0.0.0.0 --port 4173" --name vite-app
+          pm2 save
